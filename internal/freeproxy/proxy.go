@@ -57,17 +57,6 @@ type ValidateProxyResponse struct {
 	Origin string `json:"origin"`
 }
 
-func (p *Proxy) Check() {
-	address, err := url.Parse("http://" + p.IP + ":" + strconv.Itoa(p.Port))
-	if err != nil {
-		return
-	}
-
-	start := time.Now()
-	p.Valid = CheckProxy(address.String())
-	p.ResponseTime = int(time.Since(start).Seconds())
-}
-
 func (p *Proxy) Validate() {
 	address, err := url.Parse("http://" + p.IP + ":" + strconv.Itoa(p.Port))
 	if err != nil {

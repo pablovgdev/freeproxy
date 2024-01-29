@@ -5,21 +5,25 @@ import (
 )
 
 type Service struct {
-	Lumiproxy ProxyService
+	Lumiproxy   ProxyService
+	ProxyScrape ProxyService
 }
 
 func New() *Service {
 	return &Service{
-		Lumiproxy: &LumiproxyProxyService{},
+		Lumiproxy:   &Lumiproxy{},
+		ProxyScrape: &ProxyScrape{},
 	}
 }
 
-func (s *Service) GetProxyList(params GetProxiesParams) []Proxy {
+func (s *Service) GetProxies(params GetProxiesParams) []Proxy {
 	proxies := []Proxy{}
 
-	lumiproxyProxies := s.Lumiproxy.GetProxies(params)
+	// lumiproxyProxies := s.Lumiproxy.GetProxies(params)
+	// proxies = append(proxies, lumiproxyProxies...)
 
-	proxies = append(proxies, lumiproxyProxies...)
+	proxyScrapeProxies := s.ProxyScrape.GetProxies(params)
+	proxies = append(proxies, proxyScrapeProxies...)
 
 	return proxies
 }
@@ -33,8 +37,7 @@ func (s *Service) ValidateProxies(freeProxyList *[]Proxy) {
 
 		go func(i int, proxy *Proxy) {
 			defer wg.Done()
-			// proxy.Validate()
-			proxy.Check()
+			proxy.Validate()
 		}(i, proxy)
 	}
 

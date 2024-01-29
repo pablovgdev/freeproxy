@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-type LumiproxyProxyService struct{}
+type Lumiproxy struct{}
 
 type lumiproxyResponse struct {
 	RequestID string        `json:"request_id"`
@@ -40,7 +40,7 @@ type lumiproxyProxy struct {
 	ResponseTime   int
 }
 
-func (s *LumiproxyProxyService) GetProxies(params GetProxiesParams) []Proxy {
+func (s *Lumiproxy) GetProxies(params GetProxiesParams) []Proxy {
 	baseURL := "https://api.lumiproxy.com/web_v1/free-proxy/list"
 	url, err := url.Parse(baseURL)
 	if err != nil {
@@ -126,7 +126,7 @@ func (s *LumiproxyProxyService) GetProxies(params GetProxiesParams) []Proxy {
 	return proxies
 }
 
-func (s *LumiproxyProxyService) toProxy(lumiproxyProxy lumiproxyProxy) Proxy {
+func (s *Lumiproxy) toProxy(lumiproxyProxy lumiproxyProxy) Proxy {
 	proxy := Proxy{
 		IP:             lumiproxyProxy.IP,
 		Port:           lumiproxyProxy.Port,
