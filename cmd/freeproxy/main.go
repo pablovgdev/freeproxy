@@ -3,16 +3,15 @@ package main
 import (
 	"fmt"
 
-	"github.com/pablovgdev/freeproxy/internal/models"
-	"github.com/pablovgdev/freeproxy/internal/service"
+	"github.com/pablovgdev/freeproxy/internal/freeproxy"
 )
 
 func main() {
-	s := service.Service{}
-	params := service.GetProxiesParams{
+	s := freeproxy.Service{}
+	params := freeproxy.GetProxiesParams{
 		Uptime:         80,
-		Protocol:       models.HTTPS,
-		AnonimityLevel: models.Elite,
+		Protocol:       freeproxy.HTTPS,
+		AnonimityLevel: freeproxy.Elite,
 	}
 	freeProxyList := s.GetProxies(params)
 	s.ValidateProxies(&freeProxyList)

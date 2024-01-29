@@ -1,4 +1,4 @@
-package models
+package freeproxy
 
 import (
 	"encoding/json"
@@ -29,11 +29,11 @@ type ProxyAnonimityLevel int
 
 const (
 	// Reveals IP and proxy usage.
-	Transparent ProxyAnonimityLevel = 0
+	Transparent ProxyAnonimityLevel = 1
 	// Hides IP but reveals proxy usage.
-	Anonymous ProxyAnonimityLevel = 1
+	Anonymous ProxyAnonimityLevel = 2
 	// Hides IP and proxy usage.
-	Elite ProxyAnonimityLevel = 2
+	Elite ProxyAnonimityLevel = 3
 )
 
 type ProxyProtocol int
@@ -41,20 +41,31 @@ type ProxyProtocol int
 const (
 	HTTP   ProxyProtocol = 1
 	HTTPS  ProxyProtocol = 2
-	Socks4 ProxyProtocol = 4
-	Socks5 ProxyProtocol = 8
+	Socks4 ProxyProtocol = 3
+	Socks5 ProxyProtocol = 4
 )
 
 type ProxySpeed int
 
 const (
-	Slow   ProxySpeed = 0
-	Medium ProxySpeed = 1
-	Fast   ProxySpeed = 2
+	Slow   ProxySpeed = 1
+	Medium ProxySpeed = 2
+	Fast   ProxySpeed = 3
 )
 
 type ValidateProxyResponse struct {
 	Origin string `json:"origin"`
+}
+
+func (p *Proxy) Check() {
+	address, err := url.Parse("http://" + p.IP + ":" + strconv.Itoa(p.Port))
+	if err != nil {
+		return
+	}
+
+	start := time.Now()
+	p.Valid = CheckProxy(address.String())
+	p.ResponseTime = int(time.Since(start).Seconds())
 }
 
 func (p *Proxy) Validate() {
