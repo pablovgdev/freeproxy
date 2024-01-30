@@ -2,12 +2,14 @@ package freeproxy
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -16,13 +18,15 @@ type Proxy struct {
 	Port           int                 `json:"port"`
 	AnonymityLevel ProxyAnonimityLevel `json:"anonymity"`
 	Protocol       ProxyProtocol       `json:"protocol"`
-	Speed          ProxySpeed          `json:"speed"`
-	Uptime         int                 `json:"uptime"`
-	Latency        int                 `json:"latency"`
-	GooglePassed   int                 `json:"google_passed"`
 	CountryCode    string              `json:"country_code"`
-	Valid          bool
-	ResponseTime   int
+	Provider       string              `json:"provider"`
+	Validation     ProxyValidation     `json:"validation"`
+}
+
+type ProxyValidation struct {
+	mu                 *sync.Mutex
+	ValidationAttempts int `json:"validation_attempts"`
+	ValidTimes         int `json:"valid_times"`
 }
 
 type ProxyAnonimityLevel int
@@ -57,53 +61,134 @@ type ValidateProxyResponse struct {
 	Origin string `json:"origin"`
 }
 
+func NewProxy(
+	IP string,
+	Port int,
+	AnonymityLevel ProxyAnonimityLevel,
+	Protocol ProxyProtocol,
+	CountryCode string,
+	Provider string,
+) *Proxy {
+	return &Proxy{
+		IP:             IP,
+		Port:           Port,
+		AnonymityLevel: AnonymityLevel,
+		Protocol:       Protocol,
+		CountryCode:    CountryCode,
+		Provider:       Provider,
+		Validation: ProxyValidation{
+			mu:                 &sync.Mutex{},
+			ValidationAttempts: 0,
+			ValidTimes:         0,
+		},
+	}
+}
+
+func (p *Proxy) String() string {
+	anonimity := ""
+
+	switch p.AnonymityLevel {
+	case Transparent:
+		anonimity = "Transparent"
+	case Anonymous:
+		anonimity = "Anonymous"
+	case Elite:
+		anonimity = "Elite"
+	default:
+		anonimity = "Transparent"
+	}
+
+	protocol := ""
+
+	switch p.Protocol {
+	case HTTP:
+		protocol = "HTTP"
+	case HTTPS:
+		protocol = "HTTPS"
+	case Socks4:
+		protocol = "Socks4"
+	case Socks5:
+		protocol = "Socks5"
+	default:
+		protocol = "HTTP"
+	}
+
+	uptime := p.Validation.ValidTimes * 100 / p.Validation.ValidationAttempts
+
+	return fmt.Sprintf("%s:%d (%s %s %s %s %d%%)", p.IP, p.Port, p.Provider, anonimity, protocol, p.CountryCode, uptime)
+}
+
 func (p *Proxy) Validate() {
+	wg := sync.WaitGroup{}
+
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+			err := p.check()
+
+			p.Validation.mu.Lock()
+			defer p.Validation.mu.Unlock()
+			p.Validation.ValidationAttempts++
+
+			if err == nil {
+				p.Validation.ValidTimes++
+			}
+		}()
+	}
+
+	wg.Wait()
+}
+
+func (p *Proxy) check() error {
 	address, err := url.Parse("http://" + p.IP + ":" + strconv.Itoa(p.Port))
 	if err != nil {
-		return
+		return err
 	}
 
 	transport := &http.Transport{Proxy: http.ProxyURL(address)}
 	client := &http.Client{Transport: transport, Timeout: 10 * time.Second}
 
-	start := time.Now()
-	resp, err := client.Get("https://httpbin.org/get")
-	p.ResponseTime = int(time.Since(start).Seconds())
+	resp, err := client.Get("https://httpbin.org/ip")
 
 	if err != nil {
-		log.Print(err)
-		return
+		return err
 	}
 
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 
 	if err != nil {
-		log.Fatal(err)
-		return
+		return err
 	}
 
 	var validateProxyResponse ValidateProxyResponse
 	err = json.Unmarshal(body, &validateProxyResponse)
 
 	if err != nil {
-		log.Fatal(err)
-		return
+		return err
 	}
 
 	respIP := validateProxyResponse.Origin
 
 	if len(respIP) == 0 || len(respIP) > 15 {
-		return
+		return errors.New("invalid IP format")
 	}
 
 	partsIP := strings.Split(respIP, ".")
 
 	if len(partsIP) < 3 {
-		return
+		return errors.New("invalid IP parts")
 	}
 
 	IP := partsIP[0] + "." + partsIP[1] + "." + partsIP[2]
 
-	p.Valid = strings.Contains(p.IP, IP)
+	isValid := strings.Contains(p.IP, IP)
+
+	if !isValid {
+		return errors.New("IP does not match")
+	}
+
+	return nil
 }

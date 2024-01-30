@@ -126,55 +126,34 @@ func (s *Lumiproxy) GetProxies(params GetProxiesParams) []Proxy {
 	return proxies
 }
 
-func (s *Lumiproxy) toProxy(lumiproxyProxy lumiproxyProxy) Proxy {
-	proxy := Proxy{
-		IP:             lumiproxyProxy.IP,
-		Port:           lumiproxyProxy.Port,
-		AnonymityLevel: ProxyAnonimityLevel(lumiproxyProxy.AnonymityLevel),
-		Protocol:       ProxyProtocol(lumiproxyProxy.Protocol),
-		Speed:          ProxySpeed(lumiproxyProxy.Speed),
-		Uptime:         lumiproxyProxy.Uptime,
-		Latency:        lumiproxyProxy.Latency,
-		GooglePassed:   lumiproxyProxy.GooglePassed,
-		CountryCode:    lumiproxyProxy.CountryCode,
-		Valid:          lumiproxyProxy.Valid,
-		ResponseTime:   lumiproxyProxy.ResponseTime,
-	}
+func (s *Lumiproxy) toProxy(l lumiproxyProxy) Proxy {
+	var anonymityLevel ProxyAnonimityLevel
 
-	switch lumiproxyProxy.AnonymityLevel {
+	switch l.AnonymityLevel {
 	case 0:
-		proxy.AnonymityLevel = Transparent
+		anonymityLevel = Transparent
 	case 1:
-		proxy.AnonymityLevel = Anonymous
+		anonymityLevel = Anonymous
 	case 2:
-		proxy.AnonymityLevel = Elite
+		anonymityLevel = Elite
 	default:
-		proxy.AnonymityLevel = Transparent
+		anonymityLevel = Transparent
 	}
 
-	switch lumiproxyProxy.Protocol {
+	var protocol ProxyProtocol
+
+	switch l.Protocol {
 	case 1:
-		proxy.Protocol = HTTP
+		protocol = HTTP
 	case 2:
-		proxy.Protocol = HTTPS
+		protocol = HTTPS
 	case 4:
-		proxy.Protocol = Socks4
+		protocol = Socks4
 	case 8:
-		proxy.Protocol = Socks5
+		protocol = Socks5
 	default:
-		proxy.Protocol = HTTP
+		protocol = HTTP
 	}
 
-	switch lumiproxyProxy.Speed {
-	case 0:
-		proxy.Speed = Slow
-	case 1:
-		proxy.Speed = Medium
-	case 2:
-		proxy.Speed = Fast
-	default:
-		proxy.Speed = Slow
-	}
-
-	return proxy
+	return *NewProxy(l.IP, l.Port, anonymityLevel, protocol, l.CountryCode, "Lumiproxy")
 }

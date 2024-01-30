@@ -101,37 +101,36 @@ func (s *ProxyScrape) GetProxies(params GetProxiesParams) []Proxy {
 }
 
 func (s *ProxyScrape) toProxy(p proxyScrapeProxy) Proxy {
-	proxy := Proxy{
-		IP:   p.IP,
-		Port: p.Port,
-	}
+	var anonymityLevel ProxyAnonimityLevel
 
 	switch p.AnonymityLevel {
 	case "transparent":
-		proxy.AnonymityLevel = Transparent
+		anonymityLevel = Transparent
 	case "anonymous":
-		proxy.AnonymityLevel = Anonymous
+		anonymityLevel = Anonymous
 	case "elite":
-		proxy.AnonymityLevel = Elite
+		anonymityLevel = Elite
 	default:
-		proxy.AnonymityLevel = Transparent
+		anonymityLevel = Transparent
 	}
+
+	var protocol ProxyProtocol
 
 	switch p.Protocol {
 	case "http":
 		if p.SSL {
-			proxy.Protocol = HTTPS
+			protocol = HTTPS
 		} else {
-			proxy.Protocol = HTTP
+			protocol = HTTP
 		}
-		proxy.Protocol = HTTPS
+		protocol = HTTPS
 	case "socks4":
-		proxy.Protocol = Socks4
+		protocol = Socks4
 	case "socks5":
-		proxy.Protocol = Socks5
+		protocol = Socks5
 	default:
-		proxy.Protocol = HTTP
+		protocol = HTTP
 	}
 
-	return proxy
+	return *NewProxy(p.IP, p.Port, anonymityLevel, protocol, p.IPData.CountryCode, "ProxyScrape")
 }

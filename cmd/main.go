@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"strconv"
+	"time"
 
 	"github.com/pablovgdev/freeproxy/internal/freeproxy"
 )
 
 func main() {
+	start := time.Now()
 	s := freeproxy.New()
 	params := freeproxy.GetProxiesParams{
 		Uptime:         80,
@@ -18,10 +19,12 @@ func main() {
 	s.ValidateProxies(&freeProxyList)
 
 	for _, proxy := range freeProxyList {
-		if proxy.Valid {
-			fmt.Println(proxy.IP + ":" + strconv.Itoa(proxy.Port))
+		// proxy.Validate()
+		if proxy.Validation.ValidTimes > 0 {
+			fmt.Println(proxy.String())
+			// fmt.Println(proxy.IP + ":" + strconv.Itoa(proxy.Port))
 		}
 		// fmt.Println(scraper.ValidateProxy(proxy))
 	}
-
+	fmt.Println("Total execution time: ", time.Since(start))
 }

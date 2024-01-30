@@ -19,8 +19,8 @@ func New() *Service {
 func (s *Service) GetProxies(params GetProxiesParams) []Proxy {
 	proxies := []Proxy{}
 
-	// lumiproxyProxies := s.Lumiproxy.GetProxies(params)
-	// proxies = append(proxies, lumiproxyProxies...)
+	lumiproxyProxies := s.Lumiproxy.GetProxies(params)
+	proxies = append(proxies, lumiproxyProxies...)
 
 	proxyScrapeProxies := s.ProxyScrape.GetProxies(params)
 	proxies = append(proxies, proxyScrapeProxies...)
