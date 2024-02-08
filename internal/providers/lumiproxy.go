@@ -1,4 +1,4 @@
-package freeproxy
+package providers
 
 import (
 	"encoding/json"
@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+
+	"github.com/pablovgdev/freeproxy/internal/proxy"
 )
 
 type Lumiproxy struct{}
@@ -40,12 +42,12 @@ type lumiproxyProxy struct {
 	ResponseTime   int
 }
 
-func (s *Lumiproxy) GetProxies(params GetProxiesParams) []Proxy {
+func (s *Lumiproxy) GetProxies(params proxy.GetProxiesParams) []proxy.Proxy {
 	baseURL := "https://api.lumiproxy.com/web_v1/free-proxy/list"
 	url, err := url.Parse(baseURL)
 	if err != nil {
 		log.Fatal(err)
-		return []Proxy{}
+		return []proxy.Proxy{}
 	}
 
 	query := url.Query()
@@ -92,7 +94,7 @@ func (s *Lumiproxy) GetProxies(params GetProxiesParams) []Proxy {
 		query.Set("google_passed", "1")
 	}
 
-	var proxies []Proxy
+	var proxies []proxy.Proxy
 
 	url.RawQuery = query.Encode()
 
@@ -126,34 +128,34 @@ func (s *Lumiproxy) GetProxies(params GetProxiesParams) []Proxy {
 	return proxies
 }
 
-func (s *Lumiproxy) toProxy(l lumiproxyProxy) Proxy {
-	var anonymityLevel ProxyAnonimityLevel
+func (s *Lumiproxy) toProxy(l lumiproxyProxy) proxy.Proxy {
+	var anonymityLevel proxy.ProxyAnonimityLevel
 
 	switch l.AnonymityLevel {
 	case 0:
-		anonymityLevel = Transparent
+		anonymityLevel = proxy.Transparent
 	case 1:
-		anonymityLevel = Anonymous
+		anonymityLevel = proxy.Anonymous
 	case 2:
-		anonymityLevel = Elite
+		anonymityLevel = proxy.Elite
 	default:
-		anonymityLevel = Transparent
+		anonymityLevel = proxy.Transparent
 	}
 
-	var protocol ProxyProtocol
+	var protocol proxy.ProxyProtocol
 
 	switch l.Protocol {
 	case 1:
-		protocol = HTTP
+		protocol = proxy.HTTP
 	case 2:
-		protocol = HTTPS
+		protocol = proxy.HTTPS
 	case 4:
-		protocol = Socks4
+		protocol = proxy.Socks4
 	case 8:
-		protocol = Socks5
+		protocol = proxy.Socks5
 	default:
-		protocol = HTTP
+		protocol = proxy.HTTP
 	}
 
-	return *NewProxy(l.IP, l.Port, anonymityLevel, protocol, l.CountryCode, "Lumiproxy")
+	return *proxy.NewProxy(l.IP, l.Port, anonymityLevel, protocol, l.CountryCode, "Lumiproxy")
 }

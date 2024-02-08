@@ -1,4 +1,4 @@
-package freeproxy
+package proxy
 
 import (
 	"encoding/json"
@@ -20,7 +20,7 @@ type Proxy struct {
 	Protocol       ProxyProtocol       `json:"protocol"`
 	CountryCode    string              `json:"country_code"`
 	Provider       string              `json:"provider"`
-	Validation     ProxyValidation     `json:"validation"`
+	Validation     ProxyValidation     `json:"-"`
 }
 
 type ProxyValidation struct {
@@ -59,6 +59,22 @@ const (
 
 type ValidateProxyResponse struct {
 	Origin string `json:"origin"`
+}
+
+type GetProxiesParams struct {
+	Language       string              `json:"language"`
+	PageSize       int                 `json:"page_size"`
+	Page           int                 `json:"page"`
+	CountryCode    string              `json:"country_code"`
+	AnonimityLevel ProxyAnonimityLevel `json:"anonymity"`
+	Protocol       ProxyProtocol       `json:"protocol"`
+	Speed          ProxySpeed          `json:"speed"`
+	Uptime         int                 `json:"uptime"`
+	GooglePassed   bool                `json:"google_passed"`
+}
+
+type ProxyProvider interface {
+	GetProxies(params GetProxiesParams) []Proxy
 }
 
 func NewProxy(

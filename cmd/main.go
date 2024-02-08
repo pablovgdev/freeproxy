@@ -5,15 +5,16 @@ import (
 	"time"
 
 	"github.com/pablovgdev/freeproxy/internal/freeproxy"
+	"github.com/pablovgdev/freeproxy/internal/proxy"
 )
 
 func main() {
 	start := time.Now()
-	s := freeproxy.New()
-	params := freeproxy.GetProxiesParams{
+	s := freeproxy.NewFreeProxy()
+	params := proxy.GetProxiesParams{
 		Uptime:         80,
-		Protocol:       freeproxy.HTTPS,
-		AnonimityLevel: freeproxy.Elite,
+		Protocol:       proxy.HTTPS,
+		AnonimityLevel: proxy.Elite,
 	}
 	freeProxyList := s.GetProxies(params)
 	s.ValidateProxies(&freeProxyList)

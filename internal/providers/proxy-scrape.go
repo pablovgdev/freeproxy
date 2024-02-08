@@ -1,4 +1,4 @@
-package freeproxy
+package providers
 
 import (
 	"encoding/json"
@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+
+	"github.com/pablovgdev/freeproxy/internal/proxy"
 )
 
 type ProxyScrape struct{}
@@ -20,19 +22,19 @@ type proxyScrapeProxy struct {
 	AnonymityLevel string `json:"anonymity"`
 	Protocol       string `json:"protocol"`
 	SSL            bool   `json:"ssl"`
-	IPData         IPData `json:"ip_data"`
+	IPData         ipData `json:"ip_data"`
 }
 
-type IPData struct {
+type ipData struct {
 	CountryCode string `json:"countryCode"`
 }
 
-func (s *ProxyScrape) GetProxies(params GetProxiesParams) []Proxy {
+func (ps *ProxyScrape) GetProxies(params proxy.GetProxiesParams) []proxy.Proxy {
 	baseURL := "https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&timeout=10000&proxy_format=ipport&format=json"
 	url, err := url.Parse(baseURL)
 	if err != nil {
 		log.Fatal(err)
-		return []Proxy{}
+		return []proxy.Proxy{}
 	}
 
 	query := url.Query()
@@ -43,11 +45,11 @@ func (s *ProxyScrape) GetProxies(params GetProxiesParams) []Proxy {
 
 	if params.AnonimityLevel != 0 {
 		switch params.AnonimityLevel {
-		case Transparent:
+		case proxy.Transparent:
 			query.Set("anonymity", "transparent")
-		case Anonymous:
+		case proxy.Anonymous:
 			query.Set("anonymity", "anonymous")
-		case Elite:
+		case proxy.Elite:
 			query.Set("anonymity", "elite")
 		default:
 			query.Set("anonymity", "transparent")
@@ -56,19 +58,19 @@ func (s *ProxyScrape) GetProxies(params GetProxiesParams) []Proxy {
 
 	if params.Protocol != 0 {
 		switch params.Protocol {
-		case HTTP:
-		case HTTPS:
+		case proxy.HTTP:
+		case proxy.HTTPS:
 			query.Set("protocol", "http")
-		case Socks4:
+		case proxy.Socks4:
 			query.Set("protocol", "socks4")
-		case Socks5:
+		case proxy.Socks5:
 			query.Set("protocol", "socks5")
 		default:
 			query.Set("protocol", "http")
 		}
 	}
 
-	var proxies []Proxy
+	var proxies []proxy.Proxy
 
 	url.RawQuery = query.Encode()
 
@@ -94,43 +96,43 @@ func (s *ProxyScrape) GetProxies(params GetProxiesParams) []Proxy {
 	}
 
 	for _, proxy := range proxyScrapeResp.Proxies {
-		proxies = append(proxies, s.toProxy(proxy))
+		proxies = append(proxies, ps.toProxy(proxy))
 	}
 
 	return proxies
 }
 
-func (s *ProxyScrape) toProxy(p proxyScrapeProxy) Proxy {
-	var anonymityLevel ProxyAnonimityLevel
+func (ps *ProxyScrape) toProxy(p proxyScrapeProxy) proxy.Proxy {
+	var anonymityLevel proxy.ProxyAnonimityLevel
 
 	switch p.AnonymityLevel {
 	case "transparent":
-		anonymityLevel = Transparent
+		anonymityLevel = proxy.Transparent
 	case "anonymous":
-		anonymityLevel = Anonymous
+		anonymityLevel = proxy.Anonymous
 	case "elite":
-		anonymityLevel = Elite
+		anonymityLevel = proxy.Elite
 	default:
-		anonymityLevel = Transparent
+		anonymityLevel = proxy.Transparent
 	}
 
-	var protocol ProxyProtocol
+	var protocol proxy.ProxyProtocol
 
 	switch p.Protocol {
 	case "http":
 		if p.SSL {
-			protocol = HTTPS
+			protocol = proxy.HTTPS
 		} else {
-			protocol = HTTP
+			protocol = proxy.HTTP
 		}
-		protocol = HTTPS
+		protocol = proxy.HTTPS
 	case "socks4":
-		protocol = Socks4
+		protocol = proxy.Socks4
 	case "socks5":
-		protocol = Socks5
+		protocol = proxy.Socks5
 	default:
-		protocol = HTTP
+		protocol = proxy.HTTP
 	}
 
-	return *NewProxy(p.IP, p.Port, anonymityLevel, protocol, p.IPData.CountryCode, "ProxyScrape")
+	return *proxy.NewProxy(p.IP, p.Port, anonymityLevel, protocol, p.IPData.CountryCode, "ProxyScrape")
 }
